@@ -57,6 +57,27 @@ change per build and macOS ties the grant to the signature.
 Optional: copy `~/Documents/huggingface/models/argmaxinc/whisperkit-coreml`
 to the same path on the target Mac first to skip the model download.
 
+## Caveat: this folder syncs via Syncthing
+
+This project lives in `~/Projects`, which is a Syncthing-shared folder — it is
+already present on the Mac Mini (M4, Apple Silicon, supported). That makes the
+transfer steps above unnecessary:
+
+- A zip of the latest installed app is kept at `dist/Whisper.zip` and syncs
+  automatically. On the target Mac, just unzip it into `/Applications` and
+  launch — files arriving via Syncthing are **not** quarantined, so the
+  `xattr` step isn't needed. Refresh the zip after a rebuild with:
+  ```sh
+  ditto -c -k --keepParent /Applications/Whisper.app dist/Whisper.zip
+  ```
+- The model cache (`~/Documents/huggingface/...`) is outside the synced
+  folder, so each Mac still does its own one-time model download and compile.
+- Permissions (Microphone/Accessibility) are per-machine; grant them on the
+  Mini on first launch.
+- Build artifacts should not sync between machines: `~/Projects/.stignore`
+  ignores `/Whisper/.build` and `/Whisper/build` so Swift's incremental build
+  state (hundreds of MB, machine-specific) stays local to each Mac.
+
 ## Troubleshooting
 
 - **Stuck on "Transcribing…" / takes minutes:** first-run model compilation.

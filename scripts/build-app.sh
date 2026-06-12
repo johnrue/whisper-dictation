@@ -16,5 +16,12 @@ cp Support/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 # Ad-hoc signature: required for TCC (microphone/accessibility) to remember grants.
 codesign --force --sign - "$APP"
 
-echo "Built $APP"
-echo "Run with: open $APP"
+# Install to /Applications and remove the staging copy: two identical-looking
+# copies confuse the Accessibility permission list (the grant attaches to one
+# copy and silently doesn't apply to the other).
+rm -rf /Applications/Whisper.app
+ditto "$APP" /Applications/Whisper.app
+rm -rf "$APP"
+
+echo "Installed /Applications/Whisper.app"
+echo "Note: rebuilding changes the app's signature; macOS may require re-granting Accessibility."

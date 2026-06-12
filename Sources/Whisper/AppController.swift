@@ -8,7 +8,9 @@ import SwiftUI
 final class AppController: ObservableObject {
     static let shared = AppController()
 
-    @Published var status: AppStatus = .startingUp
+    @Published var status: AppStatus = .startingUp {
+        didSet { NSLog("status: \(status.label)") }
+    }
     @Published var audioLevel: Float = 0
     /// Transient message shown in the HUD (e.g. "Didn't catch that").
     @Published var hudMessage: String?

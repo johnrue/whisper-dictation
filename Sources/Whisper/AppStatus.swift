@@ -20,7 +20,7 @@ enum AppStatus: Equatable {
 
     var label: String {
         switch self {
-        case .startingUp: return "Loading model…"
+        case .startingUp: return "Loading model… (first run can take a few minutes)"
         case .idle: return "Ready"
         case .recording: return "Recording…"
         case .transcribing: return "Transcribing…"

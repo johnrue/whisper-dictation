@@ -10,7 +10,11 @@ final class Transcriber {
         guard model != loadedModel || whisperKit == nil else { return }
         whisperKit = nil
         loadedModel = nil
-        let config = WhisperKitConfig(model: model)
+        // load must be explicit: without it WhisperKit only downloads the
+        // model and the first transcribe() call silently spends minutes
+        // loading/compiling it. prewarm compiles for the Neural Engine up
+        // front so the first dictation is fast.
+        let config = WhisperKitConfig(model: model, prewarm: true, load: true)
         whisperKit = try await WhisperKit(config)
         loadedModel = model
     }

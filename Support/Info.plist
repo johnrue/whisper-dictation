@@ -27,6 +27,6 @@
     <key>NSMicrophoneUsageDescription</key>
     <string>Whisper records your voice while you hold the dictation hotkey so it can transcribe what you say.</string>
     <key>NSHumanReadableCopyright</key>
-    <string>Personal use build.</string>
+    <string>MIT Licensed. © 2026 John Rue.</string>
 </dict>
 </plist>

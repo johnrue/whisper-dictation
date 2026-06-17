@@ -13,8 +13,19 @@ cp .build/release/Whisper "$APP/Contents/MacOS/Whisper"
 cp Support/Info.plist "$APP/Contents/Info.plist"
 cp Support/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 
-# Ad-hoc signature: required for TCC (microphone/accessibility) to remember grants.
-codesign --force --sign - "$APP"
+# Sign with the stable self-signed identity if it exists (run
+# scripts/make-signing-cert.sh once to create it). A stable identity is what
+# lets TCC keep the Accessibility/Microphone grants across rebuilds; ad-hoc
+# signing changes identity every build and silently drops the grants.
+SIGN_IDENTITY="Whisper Local Signing"
+if security find-identity -p codesigning | grep -q "$SIGN_IDENTITY"; then
+    codesign --force --sign "$SIGN_IDENTITY" "$APP"
+    echo "Signed with '$SIGN_IDENTITY'."
+else
+    codesign --force --sign - "$APP"
+    echo "WARNING: signed ad-hoc — Accessibility grant will be lost on each rebuild."
+    echo "         Run scripts/make-signing-cert.sh once for a stable identity."
+fi
 
 # Install to /Applications and remove the staging copy: two identical-looking
 # copies confuse the Accessibility permission list (the grant attaches to one

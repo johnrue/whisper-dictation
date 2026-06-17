@@ -26,10 +26,22 @@ final class AppController: ObservableObject {
     private var permissionPollTimer: Timer?
     private var hudMessageTask: Task<Void, Never>?
 
+    /// Held for the app's lifetime. As an LSUIElement background app with no
+    /// visible window, the process is otherwise put into App Nap after a few
+    /// minutes of inactivity, which throttles the run loop and stops our global
+    /// hotkey monitor from receiving events — the app appears loaded but the
+    /// hotkey silently stops working.
+    private let activityToken: NSObjectProtocol
+
     /// Minimum recording length worth transcribing (~0.3 s).
     private let minimumSampleCount = Int(AudioRecorder.sampleRate * 0.3)
 
     private init() {
+        activityToken = ProcessInfo.processInfo.beginActivity(
+            options: [.userInitiatedAllowingIdleSystemSleep],
+            reason: "Listening for the global dictation hotkey"
+        )
+
         hud.controller = self
 
         hotkey.onKeyDown = { [weak self] in self?.beginRecording() }
@@ -43,7 +55,44 @@ final class AppController: ObservableObject {
         refreshPermissions()
         requestPermissionsIfNeeded()
         startPermissionPolling()
+        observeSystemWake()
         loadModel()
+    }
+
+    // MARK: - Sleep / wake recovery
+
+    /// Global NSEvent monitors silently stop delivering events across a system
+    /// sleep/wake cycle (the app is otherwise fine — main thread idle, model
+    /// loaded — the hotkey just goes dead). Re-install them on wake, and clear
+    /// any state that got wedged mid-dictation when the machine slept.
+    private func observeSystemWake() {
+        NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.recoverAfterWake() }
+        }
+    }
+
+    private func recoverAfterWake() {
+        NSLog("wake: re-installing hotkey monitor and recovering state")
+        hotkey.install()
+        if isRecording { _ = recorder.stop() }
+        audioLevel = 0
+        // Return to a usable state. Anything that was in flight (recording,
+        // transcribing) or a transient error is now stale and would wedge the
+        // hotkey, since beginRecording only fires from .idle.
+        if transcriber.isLoaded {
+            status = .idle
+        } else {
+            loadModel()
+        }
+    }
+
+    private var isRecording: Bool {
+        if case .recording = status { return true }
+        return false
     }
 
     // MARK: - Model lifecycle

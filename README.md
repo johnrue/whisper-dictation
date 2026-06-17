@@ -1,15 +1,16 @@
-# Whisper
+# Whisper Dictation
 
 Local voice dictation for macOS, in the style of superwhisper. Hold a hotkey
 anywhere, speak, release — your words are transcribed on-device by
 [WhisperKit](https://github.com/argmaxinc/WhisperKit) and pasted into whatever
-app has focus. No cloud, no subscription. Personal-use project, not published.
+app has focus. No cloud, no account, no subscription. Everything stays on your
+Mac.
 
 ## Requirements
 
 - Apple Silicon Mac (arm64 only; uses the Neural Engine)
 - macOS 14 or later
-- Xcode (to build only — installing a built app needs nothing)
+- Xcode or the Swift toolchain (to build from source)
 - ~2 GB disk for the default model
 
 ## Usage
@@ -22,27 +23,44 @@ app has focus. No cloud, no subscription. Personal-use project, not published.
 - If Accessibility isn't granted, the transcript is left on the clipboard
   instead of pasted, and the dropdown shows a grant shortcut.
 
-## Build & install (on a dev machine)
+## Build & install
+
+Clone the repo, then run the build script:
 
 ```sh
+git clone https://github.com/johnrue/whisper-dictation.git
+cd whisper-dictation
+./scripts/make-signing-cert.sh   # one time — see "Code signing" below
 ./scripts/build-app.sh
 ```
 
-This builds the SwiftPM executable, assembles the bundle with the icon,
-ad-hoc signs it, and installs it to `/Applications/Whisper.app` (removing any
-staging copy — two identical copies confuse the permission system).
+`build-app.sh` builds the SwiftPM executable, assembles `Whisper.app` with the
+icon, code-signs it, and installs it to `/Applications/Whisper.app`.
 
 First launch: grant **Microphone** and **Accessibility**, then wait for the
-model — one-time ~1.5 GB download plus a few minutes of Neural Engine
+model — a one-time ~1.5 GB download plus a few minutes of Neural Engine
 compilation. Later launches are ready in seconds.
 
-**After every rebuild you must re-grant Accessibility** (System Settings →
-Privacy & Security → Accessibility → toggle Whisper off/on). Ad-hoc signatures
-change per build and macOS ties the grant to the signature.
+### Code signing (why the cert step matters)
 
-## Installing on another Mac (no Xcode needed)
+macOS ties Accessibility and Microphone grants to the app's code-signing
+identity. Ad-hoc signing (`codesign --sign -`) produces a **new identity on
+every rebuild**, so every rebuild silently drops your grants and the app falls
+back to copying to the clipboard instead of pasting.
 
-1. On a machine that has the app, zip it:
+`scripts/make-signing-cert.sh` creates a stable, self-signed code-signing
+identity ("Whisper Local Signing") in your login keychain once, and
+`build-app.sh` signs every build with it — so your permission grants survive
+rebuilds. Run it a single time before your first build.
+
+> The first build after creating the cert may show a one-time *"codesign wants
+> to use a key in your keychain"* prompt — click **Always Allow**. If you skip
+> the cert script entirely, the build still works (ad-hoc), but you'll re-grant
+> Accessibility after every rebuild.
+
+## Installing on another Mac (no build tools needed)
+
+1. On a machine that has the app built, zip it:
    ```sh
    ditto -c -k --keepParent /Applications/Whisper.app ~/Desktop/Whisper.zip
    ```
@@ -54,49 +72,56 @@ change per build and macOS ties the grant to the signature.
 4. Launch, grant Microphone + Accessibility, wait out the one-time model
    download/compile, and enable "Launch at login" in Settings.
 
-Optional: copy `~/Documents/huggingface/models/argmaxinc/whisperkit-coreml`
-to the same path on the target Mac first to skip the model download.
+Note: a zip transferred this way is signed with the *source* machine's identity,
+which the target Mac doesn't trust — so on the target you'll grant Accessibility
+once and it sticks. Building from source on each Mac is the more robust path.
 
-## Caveat: this folder syncs via Syncthing
-
-This project lives in `~/Projects`, which is a Syncthing-shared folder — it is
-already present on the Mac Mini (M4, Apple Silicon, supported). That makes the
-transfer steps above unnecessary:
-
-- A zip of the latest installed app is kept at `dist/Whisper.zip` and syncs
-  automatically. On the target Mac, just unzip it into `/Applications` and
-  launch — files arriving via Syncthing are **not** quarantined, so the
-  `xattr` step isn't needed. Refresh the zip after a rebuild with:
-  ```sh
-  ditto -c -k --keepParent /Applications/Whisper.app dist/Whisper.zip
-  ```
-- The model cache (`~/Documents/huggingface/...`) is outside the synced
-  folder, so each Mac still does its own one-time model download and compile.
-- Permissions (Microphone/Accessibility) are per-machine; grant them on the
-  Mini on first launch.
-- Build artifacts should not sync between machines: `~/Projects/.stignore`
-  ignores `/Whisper/.build` and `/Whisper/build` so Swift's incremental build
-  state (hundreds of MB, machine-specific) stays local to each Mac.
+Optional: copy `~/Documents/huggingface/models/argmaxinc/whisperkit-coreml` to
+the same path on the target Mac first to skip the model download.
 
 ## Troubleshooting
 
-- **Stuck on "Transcribing…" / takes minutes:** first-run model compilation.
-  One-time per model per machine.
+- **Stuck on "Transcribing…" / takes minutes on first use:** first-run model
+  compilation. One-time per model per machine.
 - **Hotkey works but text only lands on the clipboard / dropdown still says
   "Grant Accessibility":** macOS doesn't consider *this exact copy* of the app
-  trusted — usually after a rebuild. Reset and re-grant:
+  trusted — usually after a rebuild with ad-hoc signing. Set up the signing cert
+  (above), or reset and re-grant:
   ```sh
   tccutil reset Accessibility com.john.whisper
   open /Applications/Whisper.app
+  ```
+- **Hotkey stops responding after the Mac sleeps or sits idle:** the app holds a
+  process-activity assertion to avoid App Nap and re-installs its global hotkey
+  monitor on wake. If you still hit this, check the logs for a `wake:` line:
+  ```sh
+  log show --predicate 'process == "Whisper" AND eventMessage CONTAINS "wake:"' --last 1h
   ```
 - **Logs:** status transitions are logged via NSLog; view with
   `log show --process Whisper --last 10m` or run the binary directly in a
   terminal to capture stdout.
 
+## How it works
+
+- **Global hotkey** — an `NSEvent` global monitor watches the configured
+  modifier key (Accessibility-gated), re-installed on system wake.
+- **Capture** — `AVAudioEngine` records the mic and resamples to 16 kHz mono
+  Float32, the format Whisper expects.
+- **Transcribe** — WhisperKit runs the model on the Neural Engine; the model is
+  loaded and prewarmed at startup so the first dictation is fast.
+- **Insert** — the transcript is placed on the clipboard and ⌘V is synthesized
+  into the focused app (falling back to clipboard-only without Accessibility).
+
 ## Project layout
 
 - `Sources/Whisper/` — the app (hotkey monitor, recorder, WhisperKit wrapper,
-  paste inserter, HUD, settings)
-- `scripts/build-app.sh` — build + install
+  paste inserter, HUD, settings, sleep/wake recovery)
+- `scripts/make-signing-cert.sh` — creates the stable signing identity (run once)
+- `scripts/build-app.sh` — build + sign + install
 - `scripts/make-icon.sh` — regenerates `Support/AppIcon.icns`
 - `docs/plans/` — design doc
+
+## License
+
+[MIT](LICENSE) © John Rue. Built on
+[WhisperKit](https://github.com/argmaxinc/WhisperKit) (also MIT).

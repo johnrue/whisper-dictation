@@ -145,6 +145,7 @@ final class AppController: ObservableObject {
         do {
             try recorder.start()
             status = .recording
+            if settings.playSounds { SoundPlayer.playStart() }
             hud.show()
         } catch {
             status = .error(error.localizedDescription)
@@ -164,6 +165,7 @@ final class AppController: ObservableObject {
         }
 
         status = .transcribing
+        if settings.playSounds { SoundPlayer.playStop() }
         let language = settings.whisperLanguage
         let transcriber = self.transcriber
         Task {

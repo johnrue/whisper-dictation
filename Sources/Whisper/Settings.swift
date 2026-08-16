@@ -6,6 +6,7 @@ enum SettingsKey {
     static let language = "language"
     static let hotkeyKey = "hotkeyKey"
     static let hotkeyMode = "hotkeyMode"
+    static let playSounds = "playSounds"
 }
 
 struct ModelOption: Identifiable {
@@ -92,6 +93,7 @@ struct AppSettings {
     var language: String
     var hotkeyKey: HotkeyKey
     var hotkeyMode: HotkeyMode
+    var playSounds: Bool
 
     /// Language code for Whisper, nil means auto-detect.
     var whisperLanguage: String? {
@@ -104,7 +106,9 @@ struct AppSettings {
             model: defaults.string(forKey: SettingsKey.model) ?? ModelOption.defaultID,
             language: defaults.string(forKey: SettingsKey.language) ?? "auto",
             hotkeyKey: HotkeyKey(rawValue: defaults.string(forKey: SettingsKey.hotkeyKey) ?? "") ?? .rightOption,
-            hotkeyMode: HotkeyMode(rawValue: defaults.string(forKey: SettingsKey.hotkeyMode) ?? "") ?? .hold
+            hotkeyMode: HotkeyMode(rawValue: defaults.string(forKey: SettingsKey.hotkeyMode) ?? "") ?? .hold,
+            // bool(forKey:) reads an unset key as false; sounds default to on.
+            playSounds: defaults.object(forKey: SettingsKey.playSounds) as? Bool ?? true
         )
     }
 }

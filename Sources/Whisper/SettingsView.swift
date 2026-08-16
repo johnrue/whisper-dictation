@@ -8,6 +8,7 @@ struct SettingsView: View {
     @AppStorage(SettingsKey.language) private var language = "auto"
     @AppStorage(SettingsKey.hotkeyKey) private var hotkeyKey = HotkeyKey.rightOption.rawValue
     @AppStorage(SettingsKey.hotkeyMode) private var hotkeyMode = HotkeyMode.hold.rawValue
+    @AppStorage(SettingsKey.playSounds) private var playSounds = true
 
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
     @State private var loginItemError: String?
@@ -30,6 +31,7 @@ struct SettingsView: View {
                         Text(option.label).tag(option.id)
                     }
                 }
+                Toggle("Play sound when recording starts and stops", isOn: $playSounds)
             }
 
             Section("Model") {
@@ -59,6 +61,7 @@ struct SettingsView: View {
         .onChange(of: language) { controller.settingsChanged() }
         .onChange(of: hotkeyKey) { controller.settingsChanged() }
         .onChange(of: hotkeyMode) { controller.settingsChanged() }
+        .onChange(of: playSounds) { controller.settingsChanged() }
         .onChange(of: launchAtLogin) { toggleLaunchAtLogin() }
     }
 

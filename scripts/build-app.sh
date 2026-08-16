@@ -37,4 +37,13 @@ ditto "$APP" /Applications/Whisper.app
 rm -rf "$APP"
 
 echo "Installed /Applications/Whisper.app"
+
+# A running instance keeps executing the old binary image after the file is
+# replaced, so an install without a relaunch silently tests stale code.
+if pgrep -xq Whisper; then
+    killall Whisper
+    sleep 1
+    open /Applications/Whisper.app
+    echo "Relaunched the running instance on the new build."
+fi
 echo "Note: rebuilding changes the app's signature; macOS may require re-granting Accessibility."

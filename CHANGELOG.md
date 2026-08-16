@@ -14,6 +14,16 @@ version is confirmed.
 - Menu-bar status, recording HUD, clipboard fallback, and launch-at-login.
 - Source build, stable local signing, installation, and troubleshooting guides.
 
+### Changed
+
+- The recording HUD is now a Dynamic-Island-style overlay (via DynamicNotchKit)
+  that expands from the notch on notched displays and floats as a pill on
+  others, shown on the screen the mouse is on.
+- The level meter is a live waveform: bar heights follow the mic level with a
+  noise gate and speech-friendly response curve. While transcribing, the bars
+  flatten and a shimmer sweeps across them instead of a spinner.
+- Recording start and stop play subtle system sound cues (toggle in Settings).
+
 ### Fixed
 
 - Connecting or disconnecting an audio device (e.g. AirPods) no longer crashes

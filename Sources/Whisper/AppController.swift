@@ -52,6 +52,14 @@ final class AppController: ObservableObject {
             Task { @MainActor in self?.audioLevel = level }
         }
 
+        // Mic vanished mid-dictation and couldn't be recovered: finish with
+        // whatever was captured rather than leaving the session wedged.
+        recorder.onCaptureLost = { [weak self] in
+            guard let self, self.isRecording else { return }
+            self.showHUDMessage("Microphone disconnected")
+            self.endRecordingAndTranscribe()
+        }
+
         refreshPermissions()
         requestPermissionsIfNeeded()
         startPermissionPolling()

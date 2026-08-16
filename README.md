@@ -121,7 +121,22 @@ the same path on the target Mac first to skip the model download.
 - `scripts/make-icon.sh` — regenerates `Support/AppIcon.icns`
 - `docs/plans/` — design doc
 
+## Support and contributing
+
+Use [GitHub Issues](https://github.com/johnrue/whisper-dictation/issues) for
+questions, reproducible bugs, and feature requests. Search existing issues and
+review the troubleshooting section before opening a new one. Never include
+private transcripts, credentials, or unredacted personal data in a public issue.
+
+Contributions are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md) for the build,
+verification, and pull-request expectations. Security reports must not be filed
+publicly; private reporting guidance is still a release blocker and is tracked
+in [RELEASE_STATUS.md](RELEASE_STATUS.md).
+
 ## License
 
 [MIT](LICENSE) © John Rue. Built on
-[WhisperKit](https://github.com/argmaxinc/WhisperKit) (also MIT).
+[WhisperKit](https://github.com/argmaxinc/WhisperKit) (MIT) and other
+open-source dependencies listed in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The build script includes the
+project license and third-party notices in the assembled app bundle.

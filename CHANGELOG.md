@@ -26,6 +26,11 @@ version is confirmed.
 
 ### Fixed
 
+- Dictation no longer transcribes silence hallucinations ("Thank you.") on
+  macOS 26: the built-in mic now reports 3 channels, and AVAudioConverter's
+  default multi-channel-to-mono downmix produces pure zeros. Capture now maps
+  channel 0 explicitly. Each dictation also logs sample count, duration, RMS,
+  and peak level (via NSLog) so silent-capture failures are diagnosable.
 - Connecting or disconnecting an audio device (e.g. AirPods) no longer crashes
   or wedges the app. A fresh audio engine is built per recording, device
   changes mid-recording rebuild capture and keep the audio already recorded,

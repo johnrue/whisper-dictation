@@ -91,6 +91,13 @@ the same path on the target Mac first to skip the model download.
   tccutil reset Accessibility com.john.whisper
   open /Applications/Whisper.app
   ```
+- **Every dictation comes out as "Thank you." / "you" / other short
+  hallucinations:** Whisper is receiving silence. Check the per-dictation
+  audio log line (`audio: N samples ... rms=... peak=...`); a peak of 0.00000
+  means capture is broken, not the model. Known cause: a macOS update changing
+  the built-in mic's channel count (macOS 26 made it 3-channel, which turned
+  AVAudioConverter's default downmix into pure zeros — fixed by mapping
+  channel 0 explicitly). Real speech shows peak ≥ ~0.1.
 - **Hotkey stops responding after the Mac sleeps or sits idle:** the app holds a
   process-activity assertion to avoid App Nap and re-installs its global hotkey
   monitor on wake. If you still hit this, check the logs for a `wake:` line:

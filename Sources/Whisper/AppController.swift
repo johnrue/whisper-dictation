@@ -165,6 +165,9 @@ final class AppController: ObservableObject {
         }
 
         status = .transcribing
+        let rms = (samples.reduce(Float(0)) { $0 + $1 * $1 } / Float(samples.count)).squareRoot()
+        let peak = samples.map(abs).max() ?? 0
+        NSLog("audio: %d samples (%.2fs) rms=%.5f peak=%.5f", samples.count, Double(samples.count) / AudioRecorder.sampleRate, rms, peak)
         if settings.playSounds { SoundPlayer.playStop() }
         let language = settings.whisperLanguage
         let transcriber = self.transcriber

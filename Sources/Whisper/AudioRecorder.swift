@@ -66,6 +66,10 @@ final class AudioRecorder {
         ), let converter = AVAudioConverter(from: inputFormat, to: targetFormat) else {
             throw RecorderError.formatFailure
         }
+        // macOS 26 exposes the built-in mic as 3 channels; AVAudioConverter's
+        // default multi->mono downmix then produces pure silence. Map channel 0
+        // explicitly (also correct for mono devices).
+        converter.channelMap = [0]
 
         // The converter is captured per-tap rather than stored on self so a
         // rebuild can never swap it out from under an in-flight tap callback.

@@ -23,6 +23,9 @@ version is confirmed.
   noise gate and speech-friendly response curve. While transcribing, the bars
   flatten and a shimmer sweeps across them instead of a spinner.
 - Recording start and stop play subtle system sound cues (toggle in Settings).
+- The transcript now stays on the clipboard after being pasted (the previous
+  clipboard contents are no longer restored), so a paste the target app
+  missed can be redone with ⌘V.
 
 ### Fixed
 

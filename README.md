@@ -15,7 +15,9 @@ Mac.
 
 ## Usage
 
-- **Hold Right Option**, speak, release. The transcript is pasted at the cursor.
+- **Hold Right Option**, speak, release. The transcript is pasted at the cursor
+  and also stays on the clipboard, so if the target app didn't take the paste,
+  ⌘V drops it in by hand.
 - A floating HUD at the bottom of the screen shows recording level, then
   "Transcribing…".
 - The menu bar mic icon shows status; its dropdown has Settings (hotkey,
@@ -81,6 +83,14 @@ the same path on the target Mac first to skip the model download.
 
 ## Troubleshooting
 
+- **The mic icon vanishes from the menu bar a few minutes after launch, with no
+  crash report:** something on the Mac is sending the app a Quit event (a
+  memory-pressure or "quit idle apps" utility is the usual suspect). Confirm with
+  ```sh
+  log show --predicate 'process == "Whisper" AND eventMessage CONTAINS "Quit AppleEvent"' --last 1d
+  ```
+  and exempt Whisper in that tool. A real crash leaves a report in
+  `~/Library/Logs/DiagnosticReports/`.
 - **Stuck on "Transcribing…" / takes minutes on first use:** first-run model
   compilation. One-time per model per machine.
 - **Hotkey works but text only lands on the clipboard / dropdown still says
@@ -118,6 +128,8 @@ the same path on the target Mac first to skip the model download.
   loaded and prewarmed at startup so the first dictation is fast.
 - **Insert** — the transcript is placed on the clipboard and ⌘V is synthesized
   into the focused app (falling back to clipboard-only without Accessibility).
+  The clipboard is not restored afterwards; the transcript stays there on
+  purpose as a manual-paste fallback.
 
 ## Project layout
 

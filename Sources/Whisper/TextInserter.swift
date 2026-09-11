@@ -7,12 +7,12 @@ enum TextInserter {
     }
 
     /// Inserts text into the frontmost app by putting it on the clipboard and
-    /// synthesizing ⌘V, then restoring the previous clipboard string.
+    /// synthesizing ⌘V. The transcript is deliberately left on the clipboard
+    /// afterwards: if the target app didn't take the paste, ⌘V by hand still
+    /// drops it in.
     @discardableResult
     static func insert(_ text: String) -> Outcome {
         let pasteboard = NSPasteboard.general
-        let previous = pasteboard.string(forType: .string)
-
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
 
@@ -21,16 +21,6 @@ enum TextInserter {
         }
 
         synthesizeCommandV()
-
-        // Give the target app time to read the pasteboard before restoring.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            // Only restore if our text is still there (the user may have
-            // copied something else in the meantime).
-            if pasteboard.string(forType: .string) == text, let previous {
-                pasteboard.clearContents()
-                pasteboard.setString(previous, forType: .string)
-            }
-        }
         return .pasted
     }
 
